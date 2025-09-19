@@ -1,0 +1,7 @@
+layers_Dense(12288)
+layers_Dense(20, activation='relu')
+Dropout(0.86)
+layers_Dense(7, activation='relu')
+Dropout(0.76)
+layers_Dense(5, activation='relu')
+layers_Dense(1, activation='sigmoid')

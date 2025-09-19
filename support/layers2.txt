@@ -1,0 +1,4 @@
+layers_Dense(2)
+layers_Dense(4, activation='tanh')
+Dropout(0.96)
+layers_Dense(1, activation='sigmoid')

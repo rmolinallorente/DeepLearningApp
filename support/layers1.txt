@@ -1,0 +1,6 @@
+layers_Dense(2)
+layers_Dense(10, activation='tanh')
+Dropout(0.86)
+layers_Dense(10, activation='tanh')
+Dropout(0.86)
+layers_Dense(1, activation='linear')
