@@ -1,0 +1,1117 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C2</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1 id="improving-deep-neural-networks-hyperparameter-tuning-regularization-and-optimization">Improving Deep Neural Networks: Hyperparameter tuning, Regularization and Optimization</h1>
+<p>This is the second course of the deep learning specialization at <a href="https://www.coursera.org/specializations/deep-learning">Coursera</a> which is moderated by <a href="http://deeplearning.ai/">DeepLearning.ai</a>. The course is taught by Andrew Ng.</p>
+<h2 id="table-of-contents">Table of contents</h2>
+<ul>
+<li><a href="#improving-deep-neural-networks-hyperparameter-tuning-regularization-and-optimization">Improving Deep Neural Networks: Hyperparameter tuning, Regularization and Optimization</a>
+<ul>
+<li><a href="#table-of-contents">Table of contents</a></li>
+<li><a href="#course-summary">Course summary</a></li>
+<li><a href="#practical-aspects-of-deep-learning">Practical aspects of Deep Learning</a>
+<ul>
+<li><a href="#train--dev--test-sets">Train / Dev / Test sets</a></li>
+<li><a href="#bias--variance">Bias / Variance</a></li>
+<li><a href="#basic-recipe-for-machine-learning">Basic Recipe for Machine Learning</a></li>
+<li><a href="#regularization">Regularization</a></li>
+<li><a href="#why-regularization-reduces-overfitting">Why regularization reduces overfitting?</a></li>
+<li><a href="#dropout-regularization">Dropout Regularization</a></li>
+<li><a href="#understanding-dropout">Understanding Dropout</a></li>
+<li><a href="#other-regularization-methods">Other regularization methods</a></li>
+<li><a href="#normalizing-inputs">Normalizing inputs</a></li>
+<li><a href="#vanishing--exploding-gradients">Vanishing / Exploding gradients</a></li>
+<li><a href="#weight-initialization-for-deep-networks">Weight Initialization for Deep Networks</a></li>
+<li><a href="#numerical-approximation-of-gradients">Numerical approximation of gradients</a></li>
+<li><a href="#gradient-checking-implementation-notes">Gradient checking implementation notes</a></li>
+<li><a href="#initialization-summary">Initialization summary</a></li>
+<li><a href="#regularization-summary">Regularization summary</a></li>
+</ul>
+</li>
+<li><a href="#optimization-algorithms">Optimization algorithms</a>
+<ul>
+<li><a href="#mini-batch-gradient-descent">Mini-batch gradient descent</a></li>
+<li><a href="#understanding-mini-batch-gradient-descent">Understanding mini-batch gradient descent</a></li>
+<li><a href="#exponentially-weighted-averages">Exponentially weighted averages</a></li>
+<li><a href="#understanding-exponentially-weighted-averages">Understanding exponentially weighted averages</a></li>
+<li><a href="#bias-correction-in-exponentially-weighted-averages">Bias correction in exponentially weighted averages</a></li>
+<li><a href="#gradient-descent-with-momentum">Gradient descent with momentum</a></li>
+<li><a href="#rmsprop">RMSprop</a></li>
+<li><a href="#adam-optimization-algorithm">Adam optimization algorithm</a></li>
+<li><a href="#learning-rate-decay">Learning rate decay</a></li>
+<li><a href="#the-problem-of-local-optima">The problem of local optima</a></li>
+</ul>
+</li>
+<li><a href="#hyperparameter-tuning-batch-normalization-and-programming-frameworks">Hyperparameter tuning, Batch Normalization and Programming Frameworks</a>
+<ul>
+<li><a href="#tuning-process">Tuning process</a></li>
+<li><a href="#using-an-appropriate-scale-to-pick-hyperparameters">Using an appropriate scale to pick hyperparameters</a></li>
+<li><a href="#hyperparameters-tuning-in-practice-pandas-vs-caviar">Hyperparameters tuning in practice: Pandas vs. Caviar</a></li>
+<li><a href="#normalizing-activations-in-a-network">Normalizing activations in a network</a></li>
+<li><a href="#fitting-batch-normalization-into-a-neural-network">Fitting Batch Normalization into a neural network</a></li>
+<li><a href="#why-does-batch-normalization-work">Why does Batch normalization work?</a></li>
+<li><a href="#batch-normalization-at-test-time">Batch normalization at test time</a></li>
+<li><a href="#softmax-regression">Softmax Regression</a></li>
+<li><a href="#training-a-softmax-classifier">Training a Softmax classifier</a></li>
+<li><a href="#deep-learning-frameworks">Deep learning frameworks</a></li>
+<li><a href="#tensorflow">TensorFlow</a></li>
+</ul>
+</li>
+<li><a href="#extra-notes">Extra Notes</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="course-summary">Course summary</h2>
+<p>Here are the course summary as its given on the course <a href="https://www.coursera.org/learn/deep-neural-network">link</a>:</p>
+<blockquote>
+<p>This course will teach you the “magic” of getting deep learning to work well. Rather than the deep learning process being a black box, you will understand what drives performance, and be able to more systematically get good results. You will also learn TensorFlow.</p>
+<p>After 3 weeks, you will:</p>
+<ul>
+<li>Understand industry best-practices for building deep learning applications.</li>
+<li>Be able to effectively use the common neural network “tricks”, including initialization, L2 and dropout regularization, Batch normalization, gradient checking,</li>
+<li>Be able to implement and apply a variety of optimization algorithms, such as mini-batch gradient descent, Momentum, RMSprop and Adam, and check for their convergence.</li>
+<li>Understand new best-practices for the deep learning era of how to set up train/dev/test sets and analyze bias/variance</li>
+<li>Be able to implement a neural network in TensorFlow.</li>
+</ul>
+<p>This is the second course of the Deep Learning Specialization.</p>
+</blockquote>
+<h2 id="practical-aspects-of-deep-learning">Practical aspects of Deep Learning</h2>
+<h3 id="train--dev--test-sets">Train / Dev / Test sets</h3>
+<ul>
+<li>Its impossible to get all your hyperparameters right on a new application from the first time.</li>
+<li>So the idea is you go through the loop: <code>Idea ==&gt; Code ==&gt; Experiment</code>.</li>
+<li>You have to go through the loop many times to figure out your hyperparameters.</li>
+<li>Your data will be split into three parts:
+<ul>
+<li>Training set.       (Has to be the largest set)</li>
+<li>Hold-out cross validation set / Development or “dev” set.</li>
+<li>Testing set.</li>
+</ul>
+</li>
+<li>You will try to build a model upon training set then try to optimize hyperparameters on dev set as much as possible. Then after your model is ready you try and evaluate the testing set.</li>
+<li>so the trend on the ratio of splitting the models:
+<ul>
+<li>If size of the  dataset is 100 to 1000000  ==&gt; 60/20/20</li>
+<li>If size of the  dataset is 1000000  to INF  ==&gt; 98/1/1 or  99.5/0.25/0.25</li>
+</ul>
+</li>
+<li>The trend now gives the training data the biggest sets.</li>
+<li>Make sure the dev and test set are coming from the same distribution.
+<ul>
+<li>For example if cat training/dev pictures are from the web but the test pictures are from users cell phone they will mismatch. It is better to make sure that dev and test set are from the same distribution.</li>
+</ul>
+</li>
+<li>The dev set rule is to try them on some of the good models you’ve created.</li>
+<li>Its OK to only have a dev set without a testing set. But a lot of people in this case call the dev set as the test set. A better terminology is to call it a dev set as its used in the development.</li>
+</ul>
+<h3 id="bias--variance">Bias / Variance</h3>
+<ul>
+<li>Bias / Variance techniques are Easy to learn, but difficult to master.</li>
+<li>So here the explanation of Bias / Variance:
+<ul>
+<li>If your model is underfitting (logistic regression of non linear data) it has a “high bias”</li>
+<li>If your model is overfitting then it has a “high variance”</li>
+<li>Your model will be alright if you balance the Bias / Variance</li>
+<li>For more:
+<ul>
+<li><img src="Images/01-_Bias_-_Variance.png" alt=""></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Another idea to get the bias /  variance if you don’t have a 2D plotting mechanism:
+<ul>
+<li>High variance (overfitting) for example:
+<ul>
+<li>Training error: 1%</li>
+<li>Dev error: 11%</li>
+</ul>
+</li>
+<li>high Bias (underfitting) for example:
+<ul>
+<li>Training error: 15%</li>
+<li>Dev error: 14%</li>
+</ul>
+</li>
+<li>high Bias (underfitting) &amp;&amp; High variance (overfitting) for example:
+<ul>
+<li>Training error: 15%</li>
+<li>Test error: 30%</li>
+</ul>
+</li>
+<li>Best:
+<ul>
+<li>Training error: 0.5%</li>
+<li>Test error: 1%</li>
+</ul>
+</li>
+<li>These Assumptions came from that human has 0% error. If the problem isn’t like that you’ll need to use human error as baseline.</li>
+</ul>
+</li>
+</ul>
+<h3 id="basic-recipe-for-machine-learning">Basic Recipe for Machine Learning</h3>
+<ul>
+<li>If your algorithm has a high bias:
+<ul>
+<li>Try to make your NN bigger (size of hidden units, number of layers)</li>
+<li>Try a different model that is suitable for your data.</li>
+<li>Try to run it longer.</li>
+<li>Different (advanced) optimization algorithms.</li>
+</ul>
+</li>
+<li>If your algorithm has a high variance:
+<ul>
+<li>More data.</li>
+<li>Try regularization.</li>
+<li>Try a different model that is suitable for your data.</li>
+</ul>
+</li>
+<li>You should try the previous two points until you have a low bias and low variance.</li>
+<li>In the older days before deep learning, there was a “Bias/variance tradeoff”. But because now you have more options/tools for solving the bias and variance problem its really helpful to use deep learning.</li>
+<li>Training a bigger neural network never hurts.</li>
+</ul>
+<h3 id="regularization">Regularization</h3>
+<ul>
+<li>Adding regularization to NN will help it reduce variance (overfitting)</li>
+<li>L1 matrix norm:
+<ul>
+<li><code>||W|| = Sum(|w[i,j]|) # sum of absolute values of all w</code></li>
+</ul>
+</li>
+<li>L2 matrix norm because of arcane technical math reasons is called Frobenius norm:
+<ul>
+<li><code>||W||^2 = Sum(|w[i,j]|^2)	# sum of all w squared</code></li>
+<li>Also can be calculated as <code>||W||^2 = W.T * W if W is a vector</code></li>
+</ul>
+</li>
+<li>Regularization for logistic regression:
+<ul>
+<li>The normal cost function that we want to minimize is: <code>J(w,b) = (1/m) * Sum(L(y(i),y'(i)))</code></li>
+<li>The L2 regularization version: <code>J(w,b) = (1/m) * Sum(L(y(i),y'(i))) + (lambda/2m) * Sum(|w[i]|^2)</code></li>
+<li>The L1 regularization version: <code>J(w,b) = (1/m) * Sum(L(y(i),y'(i))) + (lambda/2m) * Sum(|w[i]|)</code></li>
+<li>The L1 regularization version makes a lot of w values become zeros, which makes the model size smaller.</li>
+<li>L2 regularization is being used much more often.</li>
+<li><code>lambda</code> here is the regularization parameter (hyperparameter)</li>
+</ul>
+</li>
+<li>Regularization for NN:
+<ul>
+<li>
+<p>The normal cost function that we want to minimize is:<br>
+<code>J(W1,b1...,WL,bL) = (1/m) * Sum(L(y(i),y'(i)))</code></p>
+</li>
+<li>
+<p>The L2 regularization version:<br>
+<code>J(w,b) = (1/m) * Sum(L(y(i),y'(i))) + (lambda/2m) * Sum((||W[l]||^2)</code></p>
+</li>
+<li>
+<p>We stack the matrix as one vector <code>(mn,1)</code> and then we apply <code>sqrt(w1^2 + w2^2.....)</code></p>
+</li>
+<li>
+<p>To do back propagation (old way):<br>
+<code>dw[l] = (from back propagation)</code></p>
+</li>
+<li>
+<p>The new way:<br>
+<code>dw[l] = (from back propagation) + lambda/m * w[l]</code></p>
+</li>
+<li>
+<p>So plugging it in weight update step:</p>
+<ul>
+<li>
+<pre><code>w[l] = w[l] - learning_rate * dw[l]
+     = w[l] - learning_rate * ((from back propagation) + lambda/m * w[l])
+     = w[l] - (learning_rate*lambda/m) * w[l] - learning_rate * (from back propagation) 
+     = (1 - (learning_rate*lambda)/m) * w[l] - learning_rate * (from back propagation)
+</code></pre>
+</li>
+</ul>
+</li>
+<li>
+<p>In practice this penalizes large weights and effectively limits the freedom in your model.</p>
+</li>
+<li>
+<p>The new term <code>(1 - (learning_rate*lambda)/m) * w[l]</code>  causes the <strong>weight to decay</strong> in proportion to its size.</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="why-regularization-reduces-overfitting">Why regularization reduces overfitting?</h3>
+<p>Here are some intuitions:</p>
+<ul>
+<li>Intuition 1:
+<ul>
+<li>If <code>lambda</code> is too large - a lot of w’s will be close to zeros which will make the NN simpler (you can think of it as it would behave closer to logistic regression).</li>
+<li>If <code>lambda</code> is good enough it will just reduce some weights that makes the neural network overfit.</li>
+</ul>
+</li>
+<li>Intuition 2 (with <em>tanh</em> activation function):
+<ul>
+<li>If <code>lambda</code> is too large, w’s will be small (close to zero) - will use the linear part of the <em>tanh</em> activation function, so we will go from non linear activation to <em>roughly</em> linear which would make the NN a <em>roughly</em> linear classifier.</li>
+<li>If <code>lambda</code> good enough it will just make some of <em>tanh</em> activations <em>roughly</em> linear which will prevent overfitting.</li>
+</ul>
+</li>
+</ul>
+<p><em><strong>Implementation tip</strong></em>: if you implement gradient descent, one of the steps to debug gradient descent is to plot the cost function J as a function of the number of iterations of gradient descent and you want to see that the cost function J decreases <strong>monotonically</strong> after every elevation of gradient descent with regularization. If you plot the old definition of J (no regularization) then you might not see it decrease monotonically.</p>
+<h3 id="dropout-regularization">Dropout Regularization</h3>
+<ul>
+<li>
+<p>In most cases Andrew Ng tells that he uses the L2 regularization.</p>
+</li>
+<li>
+<p>The dropout regularization eliminates some neurons/weights on each iteration based on a probability.</p>
+</li>
+<li>
+<p>A most common technique to implement dropout is called “Inverted dropout”.</p>
+</li>
+<li>
+<p>Code for Inverted dropout:</p>
+<pre class=" language-python"><code class="prism  language-python">keep_prob <span class="token operator">=</span> <span class="token number">0.8</span>   <span class="token comment"># 0 &lt;= keep_prob &lt;= 1</span>
+l <span class="token operator">=</span> <span class="token number">3</span>  <span class="token comment"># this code is only for layer 3</span>
+<span class="token comment"># the generated number that are less than 0.8 will be dropped. 80% stay, 20% dropped</span>
+d3 <span class="token operator">=</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>rand<span class="token punctuation">(</span>a<span class="token punctuation">[</span>l<span class="token punctuation">]</span><span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> a<span class="token punctuation">[</span>l<span class="token punctuation">]</span><span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> keep_prob
+
+a3 <span class="token operator">=</span> np<span class="token punctuation">.</span>multiply<span class="token punctuation">(</span>a3<span class="token punctuation">,</span>d3<span class="token punctuation">)</span>   <span class="token comment"># keep only the values in d3</span>
+
+<span class="token comment"># increase a3 to not reduce the expected value of output</span>
+<span class="token comment"># (ensures that the expected value of a3 remains the same) - to solve the scaling problem</span>
+a3 <span class="token operator">=</span> a3 <span class="token operator">/</span> keep_prob       
+</code></pre>
+</li>
+<li>
+<p>Vector d[l] is used for forward and back propagation and is the same for them, but it is different for each iteration (pass) or training example.</p>
+</li>
+<li>
+<p>At test time we don’t use dropout. If you implement dropout at test time - it would add noise to predictions.</p>
+</li>
+</ul>
+<h3 id="understanding-dropout">Understanding Dropout</h3>
+<ul>
+<li>In the previous video, the intuition was that dropout randomly knocks out units in your network. So it’s as if on every iteration you’re working with a smaller NN, and so using a smaller NN seems like it should have a regularizing effect.</li>
+<li>Another intuition: can’t rely on any one feature, so have to spread out weights.</li>
+<li>It’s possible to show that dropout has a similar effect to L2 regularization.</li>
+<li>Dropout can have different <code>keep_prob</code> per layer.</li>
+<li>The input layer dropout has to be near 1 (or 1 - no dropout) because you don’t want to eliminate a lot of features.</li>
+<li>If you’re more worried about some layers overfitting than others, you can set a lower <code>keep_prob</code> for some layers than others. The downside is, this gives you even more hyperparameters to search for using cross-validation. One other alternative might be to have some layers where you apply dropout and some layers where you don’t apply dropout and then just have one hyperparameter, which is a <code>keep_prob</code> for the layers for which you do apply dropouts.</li>
+<li>A lot of researchers are using dropout with Computer Vision (CV) because they have a very big input size and almost never have enough data, so overfitting is the usual problem. And dropout is a regularization technique to prevent overfitting.</li>
+<li>A downside of dropout is that the cost function J is not well defined and it will be hard to debug (plot J by iteration).
+<ul>
+<li>To solve that you’ll need to turn off dropout, set all the <code>keep_prob</code>s to 1, and then run the code and check that it monotonically decreases J and then turn on the dropouts again.</li>
+</ul>
+</li>
+</ul>
+<h3 id="other-regularization-methods">Other regularization methods</h3>
+<ul>
+<li><strong>Data augmentation</strong>:
+<ul>
+<li>For example in a computer vision data:
+<ul>
+<li>You can flip all your pictures horizontally this will give you m more data instances.</li>
+<li>You could also apply a random position and rotation to an image to get more data.</li>
+</ul>
+</li>
+<li>For example in OCR, you can impose random rotations and distortions to digits/letters.</li>
+<li>New data obtained using this technique isn’t as good as the real independent data, but still can be used as a regularization technique.</li>
+</ul>
+</li>
+<li><strong>Early stopping</strong>:
+<ul>
+<li>In this technique we plot the training set and the dev set cost together for each iteration. At some iteration the dev set cost will stop decreasing and will start increasing.</li>
+<li>We will pick the point at which the training set error and dev set error are best (lowest training cost with lowest dev cost).</li>
+<li>We will take these parameters as the best parameters.
+<ul>
+<li><img src="Images/02-_Early_stopping.png" alt=""></li>
+</ul>
+</li>
+<li>Andrew prefers to use L2 regularization instead of early stopping because this technique simultaneously tries to minimize the cost function and not to overfit which contradicts the orthogonalization approach (will be discussed further).</li>
+<li>But its advantage is that you don’t need to search a hyperparameter like in other regularization approaches (like <code>lambda</code> in L2 regularization).</li>
+</ul>
+</li>
+<li><strong>Model Ensembles</strong>:
+<ul>
+<li>Algorithm:
+<ul>
+<li>Train multiple independent models.</li>
+<li>At test time average their results.</li>
+</ul>
+</li>
+<li>It can get you extra 2% performance.</li>
+<li>It reduces the generalization error.</li>
+<li>You can use some snapshots of your NN at the training ensembles them and take the results.</li>
+</ul>
+</li>
+</ul>
+<h3 id="normalizing-inputs">Normalizing inputs</h3>
+<ul>
+<li>If you normalize your inputs this will speed up the training process a lot.</li>
+<li>Normalization are going on these steps:
+<ol>
+<li>Get the mean of the training set: <code>mean = (1/m) * sum(x(i))</code></li>
+<li>Subtract the mean from each input: <code>X = X - mean</code>
+<ul>
+<li>This makes your inputs centered around 0.</li>
+</ul>
+</li>
+<li>Get the variance of the training set: <code>variance = (1/m) * sum(x(i)^2)</code></li>
+<li>Normalize the variance. <code>X /= variance</code></li>
+</ol>
+</li>
+<li>These steps should be applied to training, dev, and testing sets (but using mean and variance of the train set).</li>
+<li>Why normalize?
+<ul>
+<li>If we don’t normalize the inputs our cost function will be deep and its shape will be inconsistent (elongated) then optimizing it will take a long time.</li>
+<li>But if we normalize it the opposite will occur. The shape of the cost function will be consistent (look more symmetric like circle in 2D example) and we can use a larger learning rate alpha - the optimization will be faster.</li>
+</ul>
+</li>
+</ul>
+<h3 id="vanishing--exploding-gradients">Vanishing / Exploding gradients</h3>
+<ul>
+<li>The Vanishing / Exploding gradients occurs when your derivatives become very small or very big.</li>
+<li>To understand the problem, suppose that we have a deep neural network with number of layers L, and all the activation functions are <strong>linear</strong> and each <code>b = 0</code>
+<ul>
+<li>
+<p>Then:</p>
+<pre><code>Y' = W[L]W[L-1].....W[2]W[1]X
+</code></pre>
+</li>
+<li>
+<p>Then, if we have 2 hidden units per layer and x1 = x2 = 1, we result in:</p>
+<pre><code>if W[l] = [1.5   0] 
+          [0   1.5] (l != L because of different dimensions in the output layer)
+Y' = W[L] [1.5  0]^(L-1) X = 1.5^L 	# which will be very large
+          [0  1.5]
+</code></pre>
+<pre><code>if W[l] = [0.5  0]
+          [0  0.5]
+Y' = W[L] [0.5  0]^(L-1) X = 0.5^L 	# which will be very small
+          [0  0.5]
+</code></pre>
+</li>
+</ul>
+</li>
+<li>The last example explains that the activations (and similarly derivatives) will be decreased/increased exponentially as a function of number of layers.</li>
+<li>So If W &gt; I (Identity matrix) the activation and gradients will explode.</li>
+<li>And If W &lt; I (Identity matrix) the activation and gradients will vanish.</li>
+<li>Recently Microsoft trained 152 layers (ResNet)! which is a really big number. With such a deep neural network, if your activations or gradients increase or decrease exponentially as a function of L, then these values could get really big or really small. And this makes training difficult, especially if your gradients are exponentially smaller than L, then gradient descent will take tiny little steps. It will take a long time for gradient descent to learn anything.</li>
+<li>There is a partial solution that doesn’t completely solve this problem but it helps a lot - careful choice of how you initialize the weights (next video).</li>
+</ul>
+<h3 id="weight-initialization-for-deep-networks">Weight Initialization for Deep Networks</h3>
+<ul>
+<li>A partial solution to the Vanishing / Exploding gradients in NN is better or more careful choice of the random initialization of weights</li>
+<li>In a single neuron (Perceptron model): <code>Z = w1x1 + w2x2 + ... + wnxn</code>
+<ul>
+<li>So if <code>n_x</code> is large we want <code>W</code>'s to be smaller to not explode the cost.</li>
+</ul>
+</li>
+<li>So it turns out that we need the variance which equals <code>1/n_x</code> to be the range of <code>W</code>'s</li>
+<li>So lets say when we initialize <code>W</code>'s like this (better to use with <code>tanh</code> activation):<pre><code>np.random.rand(shape) * np.sqrt(1/n[l-1])
+</code></pre>
+or variation of this (Bengio et al.):<pre><code>np.random.rand(shape) * np.sqrt(2/(n[l-1] + n[l]))
+</code></pre>
+</li>
+<li>Setting initialization part inside sqrt to <code>2/n[l-1]</code> for <code>ReLU</code> is better:<pre><code>np.random.rand(shape) * np.sqrt(2/n[l-1])
+</code></pre>
+</li>
+<li>Number 1 or 2 in the neumerator can also be a hyperparameter to tune (but not the first to start with)</li>
+<li>This is one of the best way of partially solution to Vanishing / Exploding gradients (ReLU + Weight Initialization with variance) which will help gradients not to vanish/explode too quickly</li>
+<li>The initialization in this video is called “He Initialization / Xavier Initialization” and has been published in 2015 paper.</li>
+</ul>
+<h3 id="numerical-approximation-of-gradients">Numerical approximation of gradients</h3>
+<ul>
+<li>There is an technique called gradient checking which tells you if your implementation of backpropagation is correct.</li>
+<li>There’s a numerical way to calculate the derivative:<br>
+<img src="Images/03-_Numerical_approximation_of_gradients.png" alt=""></li>
+<li>Gradient checking approximates the gradients and is very helpful for finding the errors in your backpropagation implementation but it’s slower than gradient descent (so use only for debugging).</li>
+<li>Implementation of this is very simple.</li>
+<li>Gradient checking:
+<ul>
+<li>First take <code>W[1],b[1],...,W[L],b[L]</code> and reshape into one big vector (<code>theta</code>)</li>
+<li>The cost function will be <code>J(theta)</code></li>
+<li>Then take <code>dW[1],db[1],...,dW[L],db[L]</code> into one big vector (<code>d_theta</code>)</li>
+<li><strong>Algorithm</strong>:<pre><code>eps = 10^-7   # small number
+for i in len(theta):
+  d_theta_approx[i] = (J(theta1,...,theta[i] + eps) -  J(theta1,...,theta[i] - eps)) / 2*eps
+</code></pre>
+</li>
+<li>Finally we evaluate this formula <code>(||d_theta_approx - d_theta||) / (||d_theta_approx||+||d_theta||)</code> (<code>||</code> - Euclidean vector norm) and check (with eps = 10^-7):
+<ul>
+<li>if it is &lt; 10^-7  - great, very likely the backpropagation implementation is correct</li>
+<li>if around 10^-5   - can be OK, but need to inspect if there are no particularly big values in <code>d_theta_approx - d_theta</code> vector</li>
+<li>if it is &gt;= 10^-3 - bad, probably there is a bug in backpropagation implementation</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="gradient-checking-implementation-notes">Gradient checking implementation notes</h3>
+<ul>
+<li>Don’t use the gradient checking algorithm at training time because it’s very slow.</li>
+<li>Use gradient checking only for debugging.</li>
+<li>If algorithm fails grad check, look at components to try to identify the bug.</li>
+<li>Don’t forget to add <code>lamda/(2m) * sum(W[l])</code> to <code>J</code> if you are using L1 or L2 regularization.</li>
+<li>Gradient checking doesn’t work with dropout because J is not consistent.
+<ul>
+<li>You can first turn off dropout (set <code>keep_prob = 1.0</code>), run gradient checking and then turn on dropout again.</li>
+</ul>
+</li>
+<li>Run gradient checking at random initialization and train the network for a while maybe there’s a bug which can be seen when w’s and b’s become larger (further from 0) and can’t be seen on the first iteration (when w’s and b’s are very small).</li>
+</ul>
+<h3 id="initialization-summary">Initialization summary</h3>
+<ul>
+<li>
+<p>The weights W<sup>[l]</sup> should be initialized randomly to break symmetry</p>
+</li>
+<li>
+<p>It is however okay to initialize the biases b<sup>[l]</sup> to zeros. Symmetry is still broken so long as W<sup>[l]</sup> is initialized randomly</p>
+</li>
+<li>
+<p>Different initializations lead to different results</p>
+</li>
+<li>
+<p>Random initialization is used to break symmetry and make sure different hidden units can learn different things</p>
+</li>
+<li>
+<p>Don’t intialize to values that are too large</p>
+</li>
+<li>
+<p>He initialization works well for networks with ReLU activations.</p>
+</li>
+</ul>
+<h3 id="regularization-summary">Regularization summary</h3>
+<h4 id="l2-regularization">1. L2 Regularization</h4>
+<p><strong>Observations</strong>:</p>
+<ul>
+<li>The value of λ is a hyperparameter that you can tune using a dev set.</li>
+<li>L2 regularization makes your decision boundary smoother. If λ is too large, it is also possible to “oversmooth”, resulting in a model with high bias.</li>
+</ul>
+<p><strong>What is L2-regularization actually doing?</strong>:</p>
+<ul>
+<li>L2-regularization relies on the assumption that a model with small weights is simpler than a model with large weights. Thus, by penalizing the square values of the weights in the cost function you drive all the weights to smaller values. It becomes too costly for the cost to have large weights! This leads to a smoother model in which the output changes more slowly as the input changes.</li>
+</ul>
+<p><strong>What you should remember:</strong><br>
+Implications of L2-regularization on:</p>
+<ul>
+<li>cost computation:
+<ul>
+<li>A regularization term is added to the cost</li>
+</ul>
+</li>
+<li>backpropagation function:
+<ul>
+<li>There are extra terms in the gradients with respect to weight matrices</li>
+</ul>
+</li>
+<li>weights:
+<ul>
+<li>weights end up smaller (“weight decay”) - are pushed to smaller values.</li>
+</ul>
+</li>
+</ul>
+<h4 id="dropout">2. Dropout</h4>
+<p><strong>What you should remember about dropout:</strong></p>
+<ul>
+<li>Dropout is a regularization technique.</li>
+<li>You only use dropout during training. Don’t use dropout (randomly eliminate nodes) during test time.</li>
+<li>Apply dropout both during forward and backward propagation.</li>
+<li>During training time, divide each dropout layer by keep_prob to keep the same expected value for the activations. For example, if <code>keep_prob</code> is 0.5, then we will on average shut down half the nodes, so the output will be scaled by 0.5 since only the remaining half are contributing to the solution. Dividing by 0.5 is equivalent to multiplying by 2. Hence, the output now has the same expected value. You can check that this works even when keep_prob is other values than 0.5.</li>
+</ul>
+<h2 id="optimization-algorithms">Optimization algorithms</h2>
+<h3 id="mini-batch-gradient-descent">Mini-batch gradient descent</h3>
+<ul>
+<li>Training NN with a large data is slow. So to find an optimization algorithm that runs faster is a good idea.</li>
+<li>Suppose we have <code>m = 50 million</code>. To train this data it will take a huge processing time for one step.
+<ul>
+<li>because 50 million won’t fit in the memory at once we need other processing to make such a thing.</li>
+</ul>
+</li>
+<li>It turns out you can make a faster algorithm to make gradient descent process some of your items even before you finish the 50 million items.</li>
+<li>Suppose we have split m to <strong>mini batches</strong> of size 1000.
+<ul>
+<li><code>X{1} = 0 ... 1000</code></li>
+<li><code>X{2} = 1001 ... 2000</code></li>
+<li><code>...</code></li>
+<li><code>X{bs} = ...</code></li>
+</ul>
+</li>
+<li>We similarly split <code>X</code> &amp; <code>Y</code>.</li>
+<li>So the definition of mini batches ==&gt; <code>t: X{t}, Y{t}</code></li>
+<li>In <strong>Batch gradient descent</strong> we run the gradient descent on the whole dataset.</li>
+<li>While in <strong>Mini-Batch gradient descent</strong> we run the gradient descent on the mini datasets.</li>
+<li>Mini-Batch algorithm pseudo code:<pre><code>for t = 1:No_of_batches                         # this is called an epoch
+	AL, caches = forward_prop(X{t}, Y{t})
+	cost = compute_cost(AL, Y{t})
+	grads = backward_prop(AL, caches)
+	update_parameters(grads)
+</code></pre>
+</li>
+<li>The code inside an epoch should be vectorized.</li>
+<li>Mini-batch gradient descent works much faster in the large datasets.</li>
+</ul>
+<h3 id="understanding-mini-batch-gradient-descent">Understanding mini-batch gradient descent</h3>
+<ul>
+<li>In mini-batch algorithm, the cost won’t go down with each step as it does in batch algorithm. It could contain some ups and downs but generally it has to go down (unlike the batch gradient descent where cost function descreases on each iteration).<br>
+<img src="Images/04-_batch_vs_mini_batch_cost.png" alt=""></li>
+<li>Mini-batch size:
+<ul>
+<li>(<code>mini batch size = m</code>)  ==&gt;    Batch gradient descent</li>
+<li>(<code>mini batch size = 1</code>)  ==&gt;    Stochastic gradient descent (SGD)</li>
+<li>(<code>mini batch size = between 1 and m</code>) ==&gt;    Mini-batch gradient descent</li>
+</ul>
+</li>
+<li>Batch gradient descent:
+<ul>
+<li>too long per iteration (epoch)</li>
+</ul>
+</li>
+<li>Stochastic gradient descent:
+<ul>
+<li>too noisy regarding cost minimization (can be reduced by using smaller learning rate)</li>
+<li>won’t ever converge (reach the minimum cost)</li>
+<li>lose speedup from vectorization</li>
+</ul>
+</li>
+<li>Mini-batch gradient descent:
+<ol>
+<li>faster learning:
+<ul>
+<li>you have the vectorization advantage</li>
+<li>make progress without waiting to process the entire training set</li>
+</ul>
+</li>
+<li>doesn’t always exactly converge (oscelates in a very small region, but you can reduce learning rate)</li>
+</ol>
+</li>
+<li>Guidelines for choosing mini-batch size:
+<ol>
+<li>If small training set (&lt; 2000 examples) - use batch gradient descent.</li>
+<li>It has to be a power of 2 (because of the way computer memory is layed out and accessed, sometimes your code runs faster if your mini-batch size is a power of 2):<br>
+<code>64, 128, 256, 512, 1024, ...</code></li>
+<li>Make sure that mini-batch fits in CPU/GPU memory.</li>
+</ol>
+</li>
+<li>Mini-batch size is a <code>hyperparameter</code>.</li>
+</ul>
+<h3 id="exponentially-weighted-averages">Exponentially weighted averages</h3>
+<ul>
+<li>There are optimization algorithms that are better than <strong>gradient descent</strong>, but you should first learn about Exponentially weighted averages.</li>
+<li>If we have data like the temperature of day through the year it could be like this:<pre><code>t(1) = 40
+t(2) = 49
+t(3) = 45
+...
+t(180) = 60
+...
+</code></pre>
+</li>
+<li>This data is small in winter and big in summer. If we plot this data we will find it some noisy.</li>
+<li>Now lets compute the Exponentially weighted averages:<pre><code>V0 = 0
+V1 = 0.9 * V0 + 0.1 * t(1) = 4		# 0.9 and 0.1 are hyperparameters
+V2 = 0.9 * V1 + 0.1 * t(2) = 8.5
+V3 = 0.9 * V2 + 0.1 * t(3) = 12.15
+...
+</code></pre>
+</li>
+<li>General equation<pre><code>V(t) = beta * v(t-1) + (1-beta) * theta(t)
+</code></pre>
+</li>
+<li>If we plot this it will represent averages over <code>~ (1 / (1 - beta))</code> entries:
+<ul>
+<li><code>beta = 0.9</code> will average last 10 entries</li>
+<li><code>beta = 0.98</code> will average last 50 entries</li>
+<li><code>beta = 0.5</code> will average last 2 entries</li>
+</ul>
+</li>
+<li>Best beta average for our case is between 0.9 and 0.98</li>
+<li><strong>Intuition</strong>: The reason why exponentially weighted averages are useful for further optimizing gradient descent algorithm is that it can give different weights to recent data points (<code>theta</code>) based on value of <code>beta</code>. If <code>beta</code> is high (around 0.9), it smoothens out the averages of skewed data points (oscillations w.r.t. Gradient descent terminology). So this reduces oscillations in gradient descent and hence makes faster and smoother path towerds minima.</li>
+<li>Another imagery example:<br>
+<img src="Images/Nasdaq1_small.png" alt=""><br>
+<em>(taken from <a href="https://www.investopedia.com/">investopedia.com</a>)</em></li>
+</ul>
+<h3 id="understanding-exponentially-weighted-averages">Understanding exponentially weighted averages</h3>
+<ul>
+<li>Intuitions:<br>
+<img src="Images/05-_exponentially_weighted_averages_intuitions.png" alt=""></li>
+<li>We can implement this algorithm with more accurate results using a moving window. But the code is more efficient and faster using the exponentially weighted averages algorithm.</li>
+<li>Algorithm is very simple:<pre><code>v = 0
+Repeat
+{
+	Get theta(t)
+	v = beta * v + (1-beta) * theta(t)
+}
+</code></pre>
+</li>
+</ul>
+<h3 id="bias-correction-in-exponentially-weighted-averages">Bias correction in exponentially weighted averages</h3>
+<ul>
+<li>The bias correction helps make the exponentially weighted averages more accurate.</li>
+<li>Because <code>v(0) = 0</code>, the bias of the weighted averages is shifted and the accuracy suffers at the start.</li>
+<li>To solve the bias issue we have to use this equation:<pre><code>v(t) = (beta * v(t-1) + (1-beta) * theta(t)) / (1 - beta^t)
+</code></pre>
+</li>
+<li>As t becomes larger the <code>(1 - beta^t)</code> becomes close to <code>1</code></li>
+</ul>
+<h3 id="gradient-descent-with-momentum">Gradient descent with momentum</h3>
+<ul>
+<li>The momentum algorithm almost always works faster than standard gradient descent.</li>
+<li>The simple idea is to calculate the exponentially weighted averages for your gradients and then update your weights with the new values.</li>
+<li>Pseudo code:<pre><code>vdW = 0, vdb = 0
+on iteration t:
+	# can be mini-batch or batch gradient descent
+	compute dw, db on current mini-batch                
+			
+	vdW = beta * vdW + (1 - beta) * dW
+	vdb = beta * vdb + (1 - beta) * db
+	W = W - learning_rate * vdW
+	b = b - learning_rate * vdb
+</code></pre>
+</li>
+<li>Momentum helps the cost function to go to the minimum point in a more fast and consistent way.</li>
+<li><code>beta</code> is another <code>hyperparameter</code>. <code>beta = 0.9</code> is very common and works very well in most cases.</li>
+<li>In practice people don’t bother implementing <strong>bias correction</strong>.</li>
+</ul>
+<h3 id="rmsprop">RMSprop</h3>
+<ul>
+<li>Stands for <strong>Root mean square prop</strong>.</li>
+<li>This algorithm speeds up the gradient descent.</li>
+<li>Pseudo code:<pre><code>sdW = 0, sdb = 0
+on iteration t:
+	# can be mini-batch or batch gradient descent
+	compute dw, db on current mini-batch
+	
+	sdW = (beta * sdW) + (1 - beta) * dW^2  # squaring is element-wise
+	sdb = (beta * sdb) + (1 - beta) * db^2  # squaring is element-wise
+	W = W - learning_rate * dW / sqrt(sdW)
+	b = B - learning_rate * db / sqrt(sdb)
+</code></pre>
+</li>
+<li>RMSprop will make the cost function move slower on the vertical direction and faster on the horizontal direction in the following example:<br>
+<img src="Images/06-_RMSprop.png" alt=""></li>
+<li>Ensure that <code>sdW</code> is not zero by adding a small value <code>epsilon</code> (e.g. <code>epsilon = 10^-8</code>) to it:<br>
+<code>W = W - learning_rate * dW / (sqrt(sdW) + epsilon)</code></li>
+<li>With RMSprop you can increase your learning rate.</li>
+<li>Developed by Geoffrey Hinton and firstly introduced on <a href="https://www.coursera.org/">Coursera.org</a> course.</li>
+</ul>
+<h3 id="adam-optimization-algorithm">Adam optimization algorithm</h3>
+<ul>
+<li>Stands for <strong>Adaptive Moment Estimation</strong>.</li>
+<li>Adam optimization and RMSprop are among the optimization algorithms that worked very well with a lot of NN architectures.</li>
+<li>Adam optimization simply puts RMSprop and momentum together!</li>
+<li>Pseudo code:<pre><code>vdW = 0, vdW = 0
+sdW = 0, sdb = 0
+on iteration t:
+	# can be mini-batch or batch gradient descent
+	compute dw, db on current mini-batch                
+			
+	vdW = (beta1 * vdW) + (1 - beta1) * dW     # momentum
+	vdb = (beta1 * vdb) + (1 - beta1) * db     # momentum
+			
+	sdW = (beta2 * sdW) + (1 - beta2) * dW^2   # RMSprop
+	sdb = (beta2 * sdb) + (1 - beta2) * db^2   # RMSprop
+			
+	vdW = vdW / (1 - beta1^t)      # fixing bias
+	vdb = vdb / (1 - beta1^t)      # fixing bias
+			
+	sdW = sdW / (1 - beta2^t)      # fixing bias
+	sdb = sdb / (1 - beta2^t)      # fixing bias
+					
+	W = W - learning_rate * vdW / (sqrt(sdW) + epsilon)
+	b = B - learning_rate * vdb / (sqrt(sdb) + epsilon)
+</code></pre>
+</li>
+<li>Hyperparameters for Adam:
+<ul>
+<li>Learning rate: needed to be tuned.</li>
+<li><code>beta1</code>: parameter of the momentum - <code>0.9</code> is recommended by default.</li>
+<li><code>beta2</code>: parameter of the RMSprop - <code>0.999</code> is recommended by default.</li>
+<li><code>epsilon</code>: <code>10^-8</code> is recommended by default.</li>
+</ul>
+</li>
+</ul>
+<h3 id="learning-rate-decay">Learning rate decay</h3>
+<ul>
+<li>Slowly reduce learning rate.</li>
+<li>As mentioned before mini-batch gradient descent won’t reach the optimum point (converge). But by making the learning rate decay with iterations it will be much closer to it because the steps (and possible oscillations) near the optimum are smaller.</li>
+<li>One technique equations is<code>learning_rate = (1 / (1 + decay_rate * epoch_num)) * learning_rate_0</code>
+<ul>
+<li><code>epoch_num</code> is over all data (not a single mini-batch).</li>
+</ul>
+</li>
+<li>Other learning rate decay methods (continuous):
+<ul>
+<li><code>learning_rate = (0.95 ^ epoch_num) * learning_rate_0</code></li>
+<li><code>learning_rate = (k / sqrt(epoch_num)) * learning_rate_0</code></li>
+</ul>
+</li>
+<li>Some people perform learning rate decay discretely - repeatedly decrease after some number of epochs.</li>
+<li>Some people are making changes to the learning rate manually.</li>
+<li><code>decay_rate</code> is another <code>hyperparameter</code>.</li>
+<li>For Andrew Ng, learning rate decay has less priority.</li>
+</ul>
+<h3 id="the-problem-of-local-optima">The problem of local optima</h3>
+<ul>
+<li>The normal local optima is not likely to appear in a deep neural network because data is usually high dimensional. For point to be a local optima it has to be a local optima for each of the dimensions which is highly unlikely.</li>
+<li>It’s unlikely to get stuck in a bad local optima in high dimensions, it is much more likely to get to the saddle point rather to the local optima, which is not a problem.</li>
+<li>Plateaus can make learning slow:
+<ul>
+<li>Plateau is a region where the derivative is close to zero for a long time.</li>
+<li>This is where algorithms like momentum, RMSprop or Adam can help.</li>
+</ul>
+</li>
+</ul>
+<h2 id="hyperparameter-tuning-batch-normalization-and-programming-frameworks">Hyperparameter tuning, Batch Normalization and Programming Frameworks</h2>
+<h3 id="tuning-process">Tuning process</h3>
+<ul>
+<li>We need to tune our hyperparameters to get the best out of them.</li>
+<li>Hyperparameters importance are (as for Andrew Ng):
+<ol>
+<li>Learning rate.</li>
+<li>Momentum beta.</li>
+<li>Mini-batch size.</li>
+<li>No. of hidden units.</li>
+<li>No. of layers.</li>
+<li>Learning rate decay.</li>
+<li>Regularization lambda.</li>
+<li>Activation functions.</li>
+<li>Adam <code>beta1</code>, <code>beta2</code> &amp; <code>epsilon</code>.</li>
+</ol>
+</li>
+<li>Its hard to decide which hyperparameter is the most important in a problem. It depends a lot on your problem.</li>
+<li>One of the ways to tune is to sample a grid with <code>N</code> hyperparameter settings and then try all settings combinations on your problem.</li>
+<li>Try random values: don’t use a grid.</li>
+<li>You can use <code>Coarse to fine sampling scheme</code>:
+<ul>
+<li>When you find some hyperparameters values that give you a better performance - zoom into a smaller region around these values and sample more densely within this space.</li>
+</ul>
+</li>
+<li>These methods can be automated.</li>
+</ul>
+<h3 id="using-an-appropriate-scale-to-pick-hyperparameters">Using an appropriate scale to pick hyperparameters</h3>
+<ul>
+<li>Let’s say you have a specific range for a hyperparameter from “a” to “b”. It’s better to search for the right ones using the logarithmic scale rather then in linear scale:
+<ul>
+<li>Calculate: <code>a_log = log(a) # e.g. a = 0.0001 then a_log = -4</code></li>
+<li>Calculate: <code>b_log = log(b) # e.g. b = 1 then b_log = 0</code></li>
+<li>Then:<pre><code>r = (a_log - b_log) * np.random.rand() + b_log
+# In the example the range would be from [-4, 0] because rand range [0,1)
+result = 10^r
+</code></pre>
+It uniformly samples values in log scale from [a,b].</li>
+</ul>
+</li>
+<li>If we want to use the last method on exploring on the “momentum beta”:
+<ul>
+<li>Beta best range is from 0.9 to 0.999.</li>
+<li>You should search for <code>1 - beta in range 0.001 to 0.1 (1 - 0.9 and 1 - 0.999)</code> and the use <code>a = 0.001</code> and <code>b = 0.1</code>. Then:<pre><code>a_log = -3
+b_log = -1
+r = (a_log - b_log) * np.random.rand() + b_log
+beta = 1 - 10^r   # because 1 - beta = 10^r
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="hyperparameters-tuning-in-practice-pandas-vs.-caviar">Hyperparameters tuning in practice: Pandas vs. Caviar</h3>
+<ul>
+<li>Intuitions about hyperparameter settings from one application area may or may not transfer to a different one.</li>
+<li>If you don’t have much computational resources you can use the “babysitting model”:
+<ul>
+<li>Day 0 you might initialize your parameter as random and then start training.</li>
+<li>Then you watch your learning curve gradually decrease over the day.</li>
+<li>And each day you nudge your parameters a little during training.</li>
+<li>Called panda approach.</li>
+</ul>
+</li>
+<li>If you have enough computational resources, you can run some models in parallel and at the end of the day(s) you check the results.
+<ul>
+<li>Called Caviar approach.</li>
+</ul>
+</li>
+</ul>
+<h3 id="normalizing-activations-in-a-network">Normalizing activations in a network</h3>
+<ul>
+<li>In the rise of deep learning, one of the most important ideas has been an algorithm called <strong>batch normalization</strong>, created by two researchers, Sergey Ioffe and Christian Szegedy.</li>
+<li>Batch Normalization speeds up learning.</li>
+<li>Before we normalized input by subtracting the mean and dividing by variance. This helped a lot for the shape of the cost function and for reaching the minimum point faster.</li>
+<li>The question is: <em>for any hidden layer can we normalize <code>A[l]</code> to train <code>W[l+1]</code>, <code>b[l+1]</code> faster?</em> This is what batch normalization is about.</li>
+<li>There are some debates in the deep learning literature about whether you should normalize values before the activation function <code>Z[l]</code> or after applying the activation function <code>A[l]</code>. In practice, normalizing <code>Z[l]</code> is done much more often and that is what Andrew Ng presents.</li>
+<li>Algorithm:
+<ul>
+<li>Given <code>Z[l] = [z(1), ..., z(m)]</code>, i = 1 to m (for each input)</li>
+<li>Compute <code>mean = 1/m * sum(z[i])</code></li>
+<li>Compute <code>variance = 1/m * sum((z[i] - mean)^2)</code></li>
+<li>Then <code>Z_norm[i] = (z[i] - mean) / np.sqrt(variance + epsilon)</code> (add <code>epsilon</code> for numerical stability if variance = 0)
+<ul>
+<li>Forcing the inputs to a distribution with zero mean and variance of 1.</li>
+</ul>
+</li>
+<li>Then <code>Z_tilde[i] = gamma * Z_norm[i] + beta</code>
+<ul>
+<li>To make inputs belong to other distribution (with other mean and variance).</li>
+<li>gamma and beta are learnable parameters of the model.</li>
+<li>Making the NN learn the distribution of the outputs.</li>
+<li><em>Note:</em> if <code>gamma = sqrt(variance + epsilon)</code> and <code>beta = mean</code> then <code>Z_tilde[i] = z[i]</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="fitting-batch-normalization-into-a-neural-network">Fitting Batch Normalization into a neural network</h3>
+<ul>
+<li>Using batch norm in 3 hidden layers NN:<br>
+<img src="Images/bn.png" alt=""></li>
+<li>Our NN parameters will be:
+<ul>
+<li><code>W[1]</code>, <code>b[1]</code>, …, <code>W[L]</code>, <code>b[L]</code>, <code>beta[1]</code>, <code>gamma[1]</code>, …, <code>beta[L]</code>, <code>gamma[L]</code></li>
+<li><code>beta[1]</code>, <code>gamma[1]</code>, …, <code>beta[L]</code>, <code>gamma[L]</code> are updated using any optimization algorithms (like GD, RMSprop, Adam)</li>
+</ul>
+</li>
+<li>If you are using a deep learning framework, you won’t have to implement batch norm yourself:
+<ul>
+<li>Ex. in Tensorflow you can add this line: <code>tf.nn.batch-normalization()</code></li>
+</ul>
+</li>
+<li>Batch normalization is usually applied with mini-batches.</li>
+<li>If we are using batch normalization parameters <code>b[1]</code>, …, <code>b[L]</code> doesn’t count because they will be eliminated after mean subtraction step, so:<pre><code>Z[l] = W[l]A[l-1] + b[l] =&gt; Z[l] = W[l]A[l-1]
+Z_norm[l] = ...
+Z_tilde[l] = gamma[l] * Z_norm[l] + beta[l]
+</code></pre>
+<ul>
+<li>Taking the mean of a constant <code>b[l]</code> will eliminate the <code>b[l]</code></li>
+</ul>
+</li>
+<li>So if you are using batch normalization, you can remove b[l] or make it always zero.</li>
+<li>So the parameters will be <code>W[l]</code>, <code>beta[l]</code>, and <code>alpha[l]</code>.</li>
+<li>Shapes:
+<ul>
+<li><code>Z[l] - (n[l], m)</code></li>
+<li><code>beta[l] - (n[l], m)</code></li>
+<li><code>gamma[l] - (n[l], m)</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="why-does-batch-normalization-work">Why does Batch normalization work?</h3>
+<ul>
+<li>The first reason is the same reason as why we normalize X.</li>
+<li>The second reason is that batch normalization reduces the problem of input values changing (shifting).</li>
+<li>Batch normalization does some regularization:
+<ul>
+<li>Each mini batch is scaled by the mean/variance computed of that mini-batch.</li>
+<li>This adds some noise to the values <code>Z[l]</code> within that mini batch. So similar to dropout it adds some noise to each hidden layer’s activations.</li>
+<li>This has a slight regularization effect.</li>
+<li>Using bigger size of the mini-batch you are reducing noise and therefore regularization effect.</li>
+<li>Don’t rely on batch normalization as a regularization. It’s intended for normalization of hidden units, activations and therefore speeding up learning. For regularization use other regularization techniques (L2 or dropout).</li>
+</ul>
+</li>
+</ul>
+<h3 id="batch-normalization-at-test-time">Batch normalization at test time</h3>
+<ul>
+<li>When we train a NN with Batch normalization, we compute the mean and the variance of the mini-batch.</li>
+<li>In testing we might need to process examples one at a time. The mean and the variance of one example won’t make sense.</li>
+<li>We have to compute an estimated value of mean and variance to use it in testing time.</li>
+<li>We can use the weighted average across the mini-batches.</li>
+<li>We will use the estimated values of the mean and variance to test.</li>
+<li>This method is also sometimes called “Running average”.</li>
+<li>In practice most often you will use a deep learning framework and it will contain some default implementation of doing such a thing.</li>
+</ul>
+<h3 id="softmax-regression">Softmax Regression</h3>
+<ul>
+<li>In every example we have used so far we were talking about binary classification.</li>
+<li>There are a generalization of logistic regression called Softmax regression that is used for multiclass classification/regression.</li>
+<li>For example if we are classifying by classes <code>dog</code>, <code>cat</code>, <code>baby chick</code> and <code>none of that</code>
+<ul>
+<li>Dog <code>class = 1</code></li>
+<li>Cat <code>class = 2</code></li>
+<li>Baby chick <code>class = 3</code></li>
+<li>None <code>class = 0</code></li>
+<li>To represent a dog vector <code>y = [0 1 0 0]</code></li>
+<li>To represent a cat vector <code>y = [0 0 1 0]</code></li>
+<li>To represent a baby chick vector <code>y = [0 0 0 1]</code></li>
+<li>To represent a none vector <code>y = [1 0 0 0]</code></li>
+</ul>
+</li>
+<li>Notations:
+<ul>
+<li><code>C = no. of classes</code></li>
+<li>Range of classes is <code>(0, ..., C-1)</code></li>
+<li>In output layer <code>Ny = C</code></li>
+</ul>
+</li>
+<li>Each of C values in the output layer will contain a probability of the example to belong to each of the classes.</li>
+<li>In the last layer we will have to activate the Softmax activation function instead of the sigmoid activation.</li>
+<li>Softmax activation equations:<pre><code>t = e^(Z[L])                      # shape(C, m)
+A[L] = e^(Z[L]) / sum(t)          # shape(C, m), sum(t) - sum of t's for each example (shape (1, m))
+</code></pre>
+</li>
+</ul>
+<h3 id="training-a-softmax-classifier">Training a Softmax classifier</h3>
+<ul>
+<li>There’s an activation which is called hard max, which gets 1 for the maximum value and zeros for the others.
+<ul>
+<li>If you are using NumPy, its <code>np.max</code> over the vertical axis.</li>
+</ul>
+</li>
+<li>The Softmax name came from softening the values and not harding them like hard max.</li>
+<li>Softmax is a generalization of logistic activation function to <code>C</code> classes. If <code>C = 2</code> softmax reduces to logistic regression.</li>
+<li>The loss function used with softmax:<pre><code>L(y, y_hat) = - sum(y[j] * log(y_hat[j])) # j = 0 to C-1
+</code></pre>
+</li>
+<li>The cost function used with softmax:<pre><code>J(w[1], b[1], ...) = - 1 / m * (sum(L(y[i], y_hat[i]))) # i = 0 to m
+</code></pre>
+</li>
+<li>Back propagation with softmax:<pre><code>dZ[L] = Y_hat - Y
+</code></pre>
+</li>
+<li>The derivative of softmax is:<pre><code>Y_hat * (1 - Y_hat)
+</code></pre>
+</li>
+<li>Example:<br>
+<img src="Images/07-_softmax.png" alt=""></li>
+</ul>
+<h3 id="deep-learning-frameworks">Deep learning frameworks</h3>
+<ul>
+<li>It’s not practical to implement everything from scratch. Our numpy implementations were to know how NN works.</li>
+<li>There are many good deep learning frameworks.</li>
+<li>Deep learning is now in the phase of doing something with the frameworks and not from scratch to keep on going.</li>
+<li>Here are some of the leading deep learning frameworks:
+<ul>
+<li>Caffe/ Caffe2</li>
+<li>CNTK</li>
+<li>DL4j</li>
+<li>Keras</li>
+<li>Lasagne</li>
+<li>mxnet</li>
+<li>PaddlePaddle</li>
+<li>TensorFlow</li>
+<li>Theano</li>
+<li>Torch/Pytorch</li>
+</ul>
+</li>
+<li>These frameworks are getting better month by month. Comparison between them can be found <a href="https://en.wikipedia.org/wiki/Comparison_of_deep_learning_software">here</a>.</li>
+<li>How to choose deep learning framework:
+<ul>
+<li>Ease of programming (development and deployment)</li>
+<li>Running speed</li>
+<li>Truly open (open source with good governance)</li>
+</ul>
+</li>
+<li>Programming frameworks can not only shorten your coding time but sometimes also perform optimizations that speed up your code.</li>
+</ul>
+<h3 id="tensorflow">TensorFlow</h3>
+<ul>
+<li>In this section we will learn the basic structure of TensorFlow programs.</li>
+<li>Lets see how to implement a minimization function:
+<ul>
+<li>
+<p>Example function: <code>J(w) = w^2 - 10w + 25</code></p>
+</li>
+<li>
+<p>The result should be <code>w = 5</code> as the function is <code>(w-5)^2 = 0</code></p>
+</li>
+<li>
+<p>Code v.1:</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> tensorflow <span class="token keyword">as</span> tf
+
+
+w <span class="token operator">=</span> tf<span class="token punctuation">.</span>Variable<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> dtype<span class="token operator">=</span>tf<span class="token punctuation">.</span>float32<span class="token punctuation">)</span>                 <span class="token comment"># creating a variable w</span>
+cost <span class="token operator">=</span> tf<span class="token punctuation">.</span>add<span class="token punctuation">(</span>tf<span class="token punctuation">.</span>add<span class="token punctuation">(</span>w<span class="token operator">**</span><span class="token number">2</span><span class="token punctuation">,</span> tf<span class="token punctuation">.</span>multiply<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">10.0</span><span class="token punctuation">,</span> w<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">25.0</span><span class="token punctuation">)</span>        <span class="token comment"># can be written as this - cost = w**2 - 10*w + 25</span>
+train <span class="token operator">=</span> tf<span class="token punctuation">.</span>train<span class="token punctuation">.</span>GradientDescentOptimizer<span class="token punctuation">(</span><span class="token number">0.01</span><span class="token punctuation">)</span><span class="token punctuation">.</span>minimize<span class="token punctuation">(</span>cost<span class="token punctuation">)</span>
+
+init <span class="token operator">=</span> tf<span class="token punctuation">.</span>global_variables_initializer<span class="token punctuation">(</span><span class="token punctuation">)</span>
+session <span class="token operator">=</span> tf<span class="token punctuation">.</span>Session<span class="token punctuation">(</span><span class="token punctuation">)</span>
+session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>init<span class="token punctuation">)</span>
+session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>w<span class="token punctuation">)</span>    <span class="token comment"># Runs the definition of w, if you print this it will print zero</span>
+session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>train<span class="token punctuation">)</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"W after one iteration:"</span><span class="token punctuation">,</span> session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>w<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+	session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>train<span class="token punctuation">)</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"W after 1000 iterations:"</span><span class="token punctuation">,</span> session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>w<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</li>
+<li>
+<p>Code v.2 (we feed the inputs to the algorithm through coefficients):</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> tensorflow <span class="token keyword">as</span> tf
+
+
+coefficients <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">.</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">10</span><span class="token punctuation">.</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">25</span><span class="token punctuation">.</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+x <span class="token operator">=</span> tf<span class="token punctuation">.</span>placeholder<span class="token punctuation">(</span>tf<span class="token punctuation">.</span>float32<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+w <span class="token operator">=</span> tf<span class="token punctuation">.</span>Variable<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> dtype<span class="token operator">=</span>tf<span class="token punctuation">.</span>float32<span class="token punctuation">)</span>                 <span class="token comment"># Creating a variable w</span>
+cost <span class="token operator">=</span> x<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">*</span>w<span class="token operator">**</span><span class="token number">2</span> <span class="token operator">+</span> x<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">*</span>w <span class="token operator">+</span> x<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+
+train <span class="token operator">=</span> tf<span class="token punctuation">.</span>train<span class="token punctuation">.</span>GradientDescentOptimizer<span class="token punctuation">(</span><span class="token number">0.01</span><span class="token punctuation">)</span><span class="token punctuation">.</span>minimize<span class="token punctuation">(</span>cost<span class="token punctuation">)</span>
+
+init <span class="token operator">=</span> tf<span class="token punctuation">.</span>global_variables_initializer<span class="token punctuation">(</span><span class="token punctuation">)</span>
+session <span class="token operator">=</span> tf<span class="token punctuation">.</span>Session<span class="token punctuation">(</span><span class="token punctuation">)</span>
+session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>init<span class="token punctuation">)</span>
+session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>w<span class="token punctuation">)</span>    <span class="token comment"># Runs the definition of w, if you print this it will print zero</span>
+session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>train<span class="token punctuation">,</span> feed_dict<span class="token operator">=</span><span class="token punctuation">{</span>x<span class="token punctuation">:</span> coefficients<span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"W after one iteration:"</span><span class="token punctuation">,</span> session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>w<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+	session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>train<span class="token punctuation">,</span> feed_dict<span class="token operator">=</span><span class="token punctuation">{</span>x<span class="token punctuation">:</span> coefficients<span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"W after 1000 iterations:"</span><span class="token punctuation">,</span> session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>w<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</li>
+</ul>
+</li>
+<li>In TensorFlow you implement only the forward propagation and TensorFlow will do the backpropagation by itself.</li>
+<li>In TensorFlow a placeholder is a variable you can assign a value to later.</li>
+<li>If you are using a mini-batch training you should change the <code>feed_dict={x: coefficients}</code> to the current mini-batch data.</li>
+<li>Almost all TensorFlow programs use this:<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">with</span> tf<span class="token punctuation">.</span>Session<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">as</span> session<span class="token punctuation">:</span>       <span class="token comment"># better for cleaning up in case of error/exception</span>
+	session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>init<span class="token punctuation">)</span>
+	session<span class="token punctuation">.</span>run<span class="token punctuation">(</span>w<span class="token punctuation">)</span>
+</code></pre>
+</li>
+<li>In deep learning frameworks there are a lot of things that you can do with one line of code like changing the optimizer.<br>
+<em><strong>Side notes:</strong></em></li>
+<li>Writing and running programs in TensorFlow has the following steps:
+<ol>
+<li>Create Tensors (variables) that are not yet executed/evaluated.</li>
+<li>Write operations between those Tensors.</li>
+<li>Initialize your Tensors.</li>
+<li>Create a Session.</li>
+<li>Run the Session. This will run the operations you’d written above.</li>
+</ol>
+</li>
+<li>Instead of needing to write code to compute the cost function we know, we can use this line in TensorFlow :<br>
+<code>tf.nn.sigmoid_cross_entropy_with_logits(logits = ..., labels = ...)</code></li>
+<li>To initialize weights in NN using TensorFlow use:<pre><code>W1 = tf.get_variable("W1", [25,12288], initializer = tf.contrib.layers.xavier_initializer(seed = 1))
+
+b1 = tf.get_variable("b1", [25,1], initializer = tf.zeros_initializer())
+</code></pre>
+</li>
+<li>For 3-layer NN, it is important to note that the forward propagation stops at <code>Z3</code>. The reason is that in TensorFlow the last linear layer output is given as input to the function computing the loss. Therefore, you don’t need <code>A3</code>!</li>
+<li>To reset the graph use <code>tf.reset_default_graph()</code></li>
+</ul>
+<h2 id="extra-notes">Extra Notes</h2>
+<ul>
+<li>If you want a good papers in deep learning look at the ICLR proceedings (Or NIPS proceedings) and that will give you a really good view of the field.</li>
+<li>Who is Yuanqing Lin?
+<ul>
+<li>Head of Baidu research.</li>
+<li>First one to win ImageNet</li>
+<li>Works in PaddlePaddle deep learning platform.</li>
+</ul>
+</li>
+</ul>
+<p><br><br><br>
+<br><br><br>
+
+</div>
+</body>
+
+</html>
